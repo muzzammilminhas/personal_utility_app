@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  android/app/src/main/AndroidManifest.xml
+  Personal Utility App — Final version covering all 5 Parts
+  ============================================================
+
+  PERMISSIONS DECLARED:
+  ┌─────────────────────────────────┬──────────────────────────┐
+  │ Permission                      │ Required by              │
+  ├─────────────────────────────────┼──────────────────────────┤
+  │ INTERNET                        │ Supabase (all parts)     │
+  │ CAMERA                          │ QR Scanner (Part 3)      │
+  │ RECORD_AUDIO                    │ Audio Recorder (Part 5)  │
+  │ WRITE_EXTERNAL_STORAGE (≤ 12)   │ Audio save (Part 5)      │
+  │ READ_EXTERNAL_STORAGE  (≤ 12)   │ Audio read  (Part 5)     │
+  │ READ_MEDIA_AUDIO        (13+)   │ Audio read  (Part 5)     │
+  └─────────────────────────────────┴──────────────────────────┘
+
+  Android 13+ (API 33+) replaced broad storage permissions with
+  granular media permissions. We declare both sets with
+  android:maxSdkVersion so older devices get the old ones and
+  newer devices get the new ones automatically.
+  ============================================================
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ── Part 1–5: Supabase requires internet ──────────── -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- ── Part 3: QR Code Scanner ───────────────────────── -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- ── Part 5: Audio Recording ───────────────────────── -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Storage for Android 12 and below (API ≤ 32) -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!-- Granular audio permission for Android 13+ (API 33+) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+    <!-- ── Hardware feature declarations ─────────────────── -->
+    <!-- Marks camera as used but NOT required (app runs without it) -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+
+    <application
+        android:label="Personal Utility"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
+
+        <!--
+          enableOnBackInvokedCallback="true" enables the
+          Android 13+ predictive back gesture API.
+          This is also required by PopScope in record_screen.dart
+          to intercept back presses during recording.
+        -->
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+
+            <!--
+              NormalTheme is applied after the launch splash screen
+              fades out. Defined in res/values/styles.xml.
+            -->
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+
+            <!-- Makes this Activity the app launcher entry point -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Password reset deep link from Supabase -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="personalutilityapp"
+                    android:host="auth"
+                    android:pathPrefix="/reset-password" />
+            </intent-filter>
+        </activity>
+
+        <!-- Required for Flutter embedding v2 -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+
+    </application>
+
+    <!--
+      <queries> block is required on Android 11+ (API 30+).
+      Apps must explicitly declare which intents they will query.
+      mobile_scanner needs to query the camera intent to function.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
+
+</manifest>
