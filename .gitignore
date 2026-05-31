@@ -11,12 +11,25 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+*.zip
+*.rar
+*.7z
+
+# Local environment and secrets
+.env
+.env.*
+!*.env.example
+$PROFILE.env
+*.pem
+*.key
+*.p12
 
 # IntelliJ related
 *.iml
 *.ipr
 *.iws
 .idea/
+.gradle/
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
@@ -39,7 +52,17 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Android signing/local machine files
+**/local.properties
+**/key.properties
+**/*.jks
+**/*.keystore
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.gradle/
+
+# Local assignment/export bundle. README screenshots are copied to /screenshots.
+Project submission/

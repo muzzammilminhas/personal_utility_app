@@ -1,130 +1,108 @@
 # Personal Utility App
 
-A Flutter mobile application that brings together everyday productivity tools in one authenticated app. It includes QR business cards, QR scanning history, a unit converter, audio recording/playback, and an admin dashboard backed by Supabase.
+Personal Utility App is a Flutter application that combines common productivity tools behind Supabase authentication. It includes QR business card management, QR scan history, a unit converter, audio note recording/playback, and an admin dashboard backed by Supabase Auth, Postgres, Storage, and Row Level Security.
+
+This project was built as a 5th-semester Mobile Application Development project.
 
 ## Features
 
-- Supabase email/password authentication
-- Forgot-password flow with Android deep-link password reset
-- User/admin panel selection
-- Database-backed admin role detection through `public.app_admins`
-- QR business card CRUD
-- QR code generation and scanning
-- QR scan history
-- Unit converter for common measurements
-- Audio recording, upload, listing, playback, editing, and deletion
-- Supabase Storage for private audio files
-- Admin dashboard with cross-user activity totals and recent records
-- Provider-based app state management
+- Email/password authentication with Supabase Auth
+- User and admin panel routing after login
+- Database-driven admin access through `public.app_admins`
+- Password reset flow with the Android deep link `personalutilityapp://auth/reset-password`
+- QR business card create, read, update, and delete flow
+- QR code generation from saved business card data
+- QR scanner with saved scan history
+- Local unit converter for common measurement categories
+- Audio note recording with title and notes
+- Private audio upload to Supabase Storage
+- Recording list, playback, edit, and delete screens
+- Admin dashboard for totals and recent activity across cards, scans, and recordings
+- Provider-based state management
+- Flutter launcher icon configuration for mobile, web, Windows, and macOS
 
 ## Tech Stack
 
-- Flutter
-- Dart
+- Flutter 3.41.9
+- Dart 3.11.5
 - Provider
 - Supabase Auth
 - Supabase Postgres
 - Supabase Storage
-- Row Level Security policies
+- Supabase Row Level Security
+- `supabase_flutter`
 - `qr_flutter`
 - `mobile_scanner`
 - `record`
 - `audioplayers`
+- `path_provider`
+- `uuid`
+- `intl`
+- `google_fonts`
+- `flutter_launcher_icons`
 
-## Project Structure
+## Folder Structure
 
 ```text
-lib/
-  config/
-    admin_config.dart
-  models/
-    business_card.dart
-    converter_model.dart
-    recording.dart
-    scan_history.dart
-  providers/
-    auth_provider.dart
-    business_card_provider.dart
-    recording_provider.dart
-  screens/
-    admin/
-    auth/
-    converter/
-    home/
-    qr_card/
-    recorder/
-  services/
-    audio_service.dart
-    database_service.dart
-  utils/
-    app_constants.dart
-  widgets/
-    common_widgets.dart
-  main.dart
-
-android/app/src/main/AndroidManifest.xml
-supabase_setup.sql
+personal_utility_app/
+  android/                         Android project and permissions
+  assets/
+    icon/app_icon.png              App launcher icon source
+  ios/                             iOS project files
+  lib/
+    config/admin_config.dart       Admin table and role-source constants
+    main.dart                      Supabase initialization, providers, root routing
+    models/                        App data models
+    providers/                     Auth, QR card, and recording state
+    screens/
+      admin/                       Admin dashboard
+      auth/                        Login, signup, panel selection, reset password
+      converter/                   Unit converter screen
+      home/                        User home panel
+      qr_card/                     QR card CRUD, QR display, scanner, history
+      recorder/                    Audio record, list, playback, edit
+    services/                      Supabase database and audio storage services
+    utils/                         App constants
+    widgets/                       Shared UI widgets
+  linux/                           Linux desktop project files
+  macos/                           macOS desktop project files
+  screenshots/                     README screenshots extracted from project submission
+  test/                            Flutter widget test folder
+  web/                             Web project files
+  windows/                         Windows desktop project files
+  supabase_setup.sql               Database, Storage, and RLS setup script
+  pubspec.yaml                     Dependencies and asset configuration
 ```
 
-## Prerequisites
+`Project submission/` is a local submission/export folder and is ignored by Git. The screenshots needed for this README were copied into `screenshots/`.
 
-- Flutter SDK installed
-- Android Studio or another Flutter-compatible IDE
-- A Supabase project
-- Android emulator or physical Android device
+## Installation
 
-Check your Flutter setup:
+Run all commands in PowerShell.
 
-```bash
-flutter doctor
-```
-
-## Getting Started
-
-Install dependencies:
-
-```bash
+```powershell
+cd C:\FlutterProjects\personal_utility_app
+flutter --version
 flutter pub get
 ```
 
-Run the app:
+If you are cloning the repository onto another machine:
 
-```bash
-flutter run
-```
-
-Run static analysis:
-
-```bash
-flutter analyze
-```
-
-Run tests:
-
-```bash
-flutter test
-```
-
-Build a debug APK:
-
-```bash
-flutter build apk --debug
+```powershell
+git clone https://github.com/muzzammilminhas/personal_utility_app.git
+cd personal_utility_app
+flutter pub get
 ```
 
 ## Supabase Setup
 
-Run the SQL setup file in your Supabase project:
+Create a Supabase project, then run the setup script from this repository.
 
-```text
-supabase_setup.sql
+```powershell
+Get-Content .\supabase_setup.sql | Set-Clipboard
 ```
 
-In Supabase:
-
-1. Open your project dashboard.
-2. Go to SQL Editor.
-3. Paste the contents of `supabase_setup.sql`.
-4. Run the script.
+Then open the Supabase SQL Editor, paste the copied SQL, and run it.
 
 The script creates:
 
@@ -132,86 +110,37 @@ The script creates:
 - `scan_history`
 - `recordings`
 - `app_admins`
-- Storage bucket `recordings`
-- RLS policies for user-owned data
+- private Storage bucket `recordings`
+- helper function `public.is_app_admin()`
+- RLS policies for normal user data access
 - RLS policies for admin dashboard reads
-- Helper function `public.is_app_admin()`
 
-## Supabase Credentials
-
-The Supabase client is initialized in:
+The app currently initializes Supabase with this project's configured URL and public anon key in:
 
 ```text
 lib/main.dart
 ```
 
-Update these constants for your own Supabase project if needed:
+If this app is moved to a different Supabase project, replace the `supabaseUrl` and `supabaseAnonKey` constants in that file with values from Supabase Dashboard -> Project Settings -> API.
 
-```dart
-const String supabaseUrl = 'YOUR_SUPABASE_PROJECT_URL';
-const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
-```
+The anon key is a client-side public key, but never commit a Supabase service-role key, database password, JWT secret, or private API token.
 
-Use the public anon key from:
+## Password Reset Deep Link
 
-```text
-Supabase Dashboard -> Project Settings -> API
-```
-
-## Authentication Flow
-
-The app uses Supabase Auth with email/password sign-in.
-
-Auth state is managed in:
-
-```text
-lib/providers/auth_provider.dart
-```
-
-The root auth gate is in:
-
-```text
-lib/main.dart
-```
-
-Routing behavior:
-
-- No session: panel selection screen
-- Password recovery session: reset password screen
-- Normal user session: home screen
-- Admin session: admin dashboard
-
-## Forgot Password Deep Link
-
-The password reset email must use this redirect URL:
-
-```text
-personalutilityapp://auth/reset-password
-```
-
-The app sends reset emails with:
-
-```dart
-Supabase.instance.client.auth.resetPasswordForEmail(
-  email.trim(),
-  redirectTo: 'personalutilityapp://auth/reset-password',
-);
-```
-
-Add this URL in Supabase:
+Add this redirect URL in Supabase:
 
 ```text
 Authentication -> URL Configuration -> Additional Redirect URLs
 personalutilityapp://auth/reset-password
 ```
 
-Android handles the deep link in:
+Android handles the redirect in:
 
 ```text
 android/app/src/main/AndroidManifest.xml
 ```
 
-The `MainActivity` intent filter uses:
+The matching intent filter uses:
 
 ```xml
 <data
@@ -220,199 +149,113 @@ The `MainActivity` intent filter uses:
     android:pathPrefix="/reset-password" />
 ```
 
-## Password Reset Flow
+## Run Commands
 
-1. User enters email on login screen.
-2. User taps Forgot Password.
-3. Supabase sends a password reset email.
-4. Email link opens the Android app through `personalutilityapp://auth/reset-password`.
-5. Supabase creates a temporary password recovery session.
-6. The app routes to `ResetPasswordScreen`.
-7. User enters and confirms a new password.
-8. The app calls `updateUser(UserAttributes(password: newPassword))`.
-9. The temporary recovery session is signed out.
-10. The user is sent back to login.
+Run the app on the default connected device:
 
-Expired or reused reset links are handled with a visible error message instead of crashing the app.
-
-## Admin Roles
-
-Admin access is controlled by the database table:
-
-```text
-public.app_admins
+```powershell
+flutter run
 ```
 
-The app does not use a hardcoded admin password as the source of truth. After any successful Supabase sign-in, the app checks whether the signed-in user's `user_id` exists in `public.app_admins`.
+Run on Chrome:
 
-Add or repair an admin account with:
-
-```sql
-insert into public.app_admins (user_id, email)
-select id, email
-from auth.users
-where lower(email) = lower('admin@example.com')
-on conflict (user_id) do update
-set email = excluded.email;
+```powershell
+flutter run -d chrome
 ```
 
-Check whether an admin row exists:
+Run static analysis:
 
-```sql
-select id, email
-from auth.users
-where lower(email) = lower('admin@example.com');
-
-select *
-from public.app_admins
-where lower(email) = lower('admin@example.com');
+```powershell
+flutter analyze
 ```
 
-Replace `admin@example.com` with the real admin email.
+Run tests:
 
-## User Data and RLS
-
-Normal users can only read and write their own records through RLS:
-
-- `business_cards.user_id = auth.uid()`
-- `scan_history.user_id = auth.uid()`
-- `recordings.user_id = auth.uid()`
-- audio files are stored under the user's ID folder in Supabase Storage
-
-Admins listed in `public.app_admins` can read all module data for the admin dashboard.
-
-## Main Modules
-
-### QR Business Cards
-
-Users can create, edit, delete, and view business card profiles. The app can generate QR codes for saved cards.
-
-Relevant files:
-
-- `lib/screens/qr_card/card_list_screen.dart`
-- `lib/screens/qr_card/card_form_screen.dart`
-- `lib/screens/qr_card/qr_view_screen.dart`
-- `lib/providers/business_card_provider.dart`
-- `lib/services/database_service.dart`
-
-### QR Scanner and Scan History
-
-Users can scan QR codes and save scan results to their own history.
-
-Relevant files:
-
-- `lib/screens/qr_card/qr_scanner_screen.dart`
-- `lib/screens/qr_card/scan_history_screen.dart`
-
-### Unit Converter
-
-A local-only converter module. It does not require Supabase storage.
-
-Relevant files:
-
-- `lib/screens/converter/converter_screen.dart`
-- `lib/models/converter_model.dart`
-
-### Audio Recorder
-
-Users can record audio, upload private files to Supabase Storage, store metadata in Postgres, play recordings, edit titles/notes, and delete recordings.
-
-Relevant files:
-
-- `lib/screens/recorder/record_screen.dart`
-- `lib/screens/recorder/recording_list_screen.dart`
-- `lib/screens/recorder/playback_screen.dart`
-- `lib/screens/recorder/edit_recording_screen.dart`
-- `lib/providers/recording_provider.dart`
-- `lib/services/audio_service.dart`
-- `lib/services/database_service.dart`
-
-### Admin Dashboard
-
-Admins can see cross-user totals and recent activity for cards, scans, and recordings.
-
-Relevant files:
-
-- `lib/screens/admin/admin_dashboard_screen.dart`
-- `lib/services/database_service.dart`
-- `lib/providers/auth_provider.dart`
-
-## Android Permissions
-
-The Android manifest declares permissions for:
-
-- Internet access for Supabase
-- Camera access for QR scanning
-- Microphone access for recording
-- Storage/media access for audio handling on supported Android versions
-
-Manifest path:
-
-```text
-android/app/src/main/AndroidManifest.xml
+```powershell
+flutter test
 ```
 
-## App Icons
+Build a debug APK:
 
-Launcher icon generation is configured in `pubspec.yaml` using:
-
-```text
-assets/icon/app_icon.png
+```powershell
+flutter build apk --debug
 ```
 
-Regenerate launcher icons:
+Build a release APK:
 
-```bash
+```powershell
+flutter build apk --release
+```
+
+Build for web:
+
+```powershell
+flutter build web --release
+```
+
+Regenerate launcher icons after changing `assets/icon/app_icon.png`:
+
+```powershell
 dart run flutter_launcher_icons
 ```
 
-## Troubleshooting
+## Screenshots
 
-### Password reset link opens the app but shows expired
+### App Screens
 
-Use the newest email link only. Supabase reset links are one-time and can expire. Request a new reset email and open the latest link on the same device.
+| Signup | Home | User Panel |
+| --- | --- | --- |
+| <img src="screenshots/signup-page.jpeg" alt="Signup page" width="220"> | <img src="screenshots/home-page.jpeg" alt="Home page" width="220"> | <img src="screenshots/user-panel.jpeg" alt="User panel" width="220"> |
 
-### Password reset link opens a blank browser page
+| QR Card | Unit Converter | Audio Notes |
+| --- | --- | --- |
+| <img src="screenshots/qr-code-card-screen.jpeg" alt="QR code card screen" width="220"> | <img src="screenshots/unit-converter.jpeg" alt="Unit converter" width="220"> | <img src="screenshots/audio-notes-recording.jpeg" alt="Audio notes recording" width="220"> |
 
-Confirm this redirect URL is added in Supabase:
+| Admin Panel |
+| --- |
+| <img src="screenshots/admin-panel.jpeg" alt="Admin panel" width="220"> |
 
-```text
-personalutilityapp://auth/reset-password
-```
+### Supabase Screens
 
-Also confirm the Android manifest contains the matching `VIEW` intent filter.
+| Supabase Home | Authentication |
+| --- | --- |
+| <img src="screenshots/supabase-home-page.jpeg" alt="Supabase home page" width="420"> | <img src="screenshots/supabase-authentication-page.jpeg" alt="Supabase authentication page" width="420"> |
 
-### Admin login goes to the user panel
+| Storage Bucket |
+| --- |
+| <img src="screenshots/supabase-storage-bucket-page.jpeg" alt="Supabase storage bucket page" width="420"> |
 
-Confirm the admin account exists in `public.app_admins`:
+## Important Files
 
-```sql
-select *
-from public.app_admins
-where lower(email) = lower('admin@example.com');
-```
+- `lib/main.dart` initializes Supabase, registers providers, and controls root routing.
+- `lib/providers/auth_provider.dart` contains authentication, password recovery, and admin role logic.
+- `lib/services/database_service.dart` contains Supabase table operations.
+- `lib/services/audio_service.dart` handles audio file upload, signed URLs, and deletion.
+- `lib/providers/business_card_provider.dart` manages QR card and scan history state.
+- `lib/providers/recording_provider.dart` manages recording state.
+- `lib/screens/admin/admin_dashboard_screen.dart` renders admin totals and recent records.
+- `supabase_setup.sql` is the database, Storage, helper function, and RLS source of truth.
 
-If no row exists, insert it using the admin SQL shown above.
+## Do Not Push
 
-### User login signs out immediately
+Do not commit these files or folders:
 
-Run the latest build and check logs for:
+- `.env`, `.env.*`, and `$PROFILE.env`
+- Supabase service-role keys, database passwords, JWT secrets, or private API tokens
+- Android signing files such as `*.jks`, `*.keystore`, `key.properties`, or `local.properties`
+- Generated Flutter folders such as `build/`, `.dart_tool/`, `.pub/`, and `coverage/`
+- Local IDE/cache folders such as `.idea/`, `.vscode/`, and `.gradle/`
+- Local submission/export bundles such as `Project submission/`
+- ZIP/RAR/7z archives created for assignment submission
 
-```text
-Role fetched ... isAdmin=false role=user rows=0
-Final navigation decision: user panel
-```
+The `docs/` directory in this checkout contains generated Flutter web build output. Keep it only if you intentionally use it for GitHub Pages; otherwise treat it as generated build output.
 
-Normal users do not need a row in `public.app_admins`.
+## Author
 
-## Development Notes
+Muzammil Minhas
 
-- Keep password reset redirect URLs consistent everywhere.
-- Do not create or upsert a normal user role during password recovery.
-- Do not overwrite rows in `public.app_admins` unless intentionally changing admin access.
-- Keep RLS enabled on Supabase tables.
-- Run `flutter analyze` and `flutter test` before release builds.
+- GitHub: [@muzzammilminhas](https://github.com/muzzammilminhas)
 
 ## License
 
-This project is intended for academic and personal utility app development. Add a formal license before publishing or distributing publicly.
+This project is intended for academic and personal utility app development. Add a formal license before public distribution.
