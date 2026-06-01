@@ -1,25 +1,4 @@
-// ============================================================
-//  services/database_service.dart  –  Supabase CRUD Operations
-// ============================================================
-//
-//  The SERVICE LAYER is where all database calls live.
-//  Keeping DB logic here (not in screens or providers) means:
-//  • Screens stay simple — they only call service methods
-//  • Easy to change or fix DB logic in one place
-//  • Code is reusable across multiple providers/screens
-//
-//  This service handles ALL three modules:
-//  ① Business Cards  ② Scan History  ③ Recordings
-//
-//  Every method:
-//  • Is async (returns a Future) because network calls take time
-//  • Uses try/catch to handle errors gracefully
-//  • Filters by user_id automatically (RLS does this too,
-//    but we filter explicitly for clarity)
-//
-// ============================================================
-
-import 'dart:io'; // dart:io File class
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/business_card.dart';
@@ -47,19 +26,13 @@ class AdminDashboardData {
 }
 
 class DatabaseService {
-  // ── Supabase client singleton ──────────────────────────────
   final SupabaseClient _db = Supabase.instance.client;
 
-  // ── Helper: get current user's ID ─────────────────────────
   String get _userId {
     final user = _db.auth.currentUser;
     if (user == null) throw Exception('No user logged in');
     return user.id;
   }
-
-  // ════════════════════════════════════════════════════════════
-  //  SECTION 1: BUSINESS CARDS
-  // ════════════════════════════════════════════════════════════
 
   Future<List<BusinessCard>> fetchBusinessCards() async {
     try {
@@ -121,10 +94,6 @@ class DatabaseService {
       throw Exception('Failed to delete business card: $e');
     }
   }
-
-  // ════════════════════════════════════════════════════════════
-  //  SECTION 2: SCAN HISTORY
-  // ════════════════════════════════════════════════════════════
 
   Future<List<ScanHistory>> fetchScanHistory() async {
     try {
@@ -227,10 +196,6 @@ class DatabaseService {
         .toList();
   }
 
-  // ════════════════════════════════════════════════════════════
-  //  SECTION 3: AUDIO RECORDINGS (metadata)
-  // ════════════════════════════════════════════════════════════
-
   Future<List<Recording>> fetchRecordings() async {
     try {
       final response = await _db
@@ -295,28 +260,20 @@ class DatabaseService {
     }
   }
 
-  // ════════════════════════════════════════════════════════════
-  //  SECTION 4: STORAGE (Audio Files)
-  // ════════════════════════════════════════════════════════════
-
-  // ── Upload audio file to Supabase Storage ─────────────────
-  // Uses dart:io File to read bytes from the local path,
-  // then uploads to the 'recordings' bucket.
-  // Returns the storage path used as filePath in Recording.
   Future<String> uploadAudioFile({
     required String localFilePath,
     required String fileName,
   }) async {
     try {
       final storagePath = '$_userId/$fileName';
-      final file = File(localFilePath); // dart:io File
-      final bytes = await file.readAsBytes(); // Uint8List
+      final file = File(localFilePath);
+      final bytes = await file.readAsBytes();
 
       await _db.storage.from('recordings').uploadBinary(
             storagePath,
             bytes,
             fileOptions: const FileOptions(
-              contentType: 'audio/mp4', // MIME type for .m4a
+              contentType: 'audio/mp4',
               upsert: false,
             ),
           );
@@ -327,23 +284,19 @@ class DatabaseService {
     }
   }
 
-  // ── Get a signed URL to play an audio file ────────────────
   Future<String> getAudioUrl(String storagePath) async {
     try {
       return await _db.storage
           .from('recordings')
-          .createSignedUrl(storagePath, 3600); // 1 hour expiry
+          .createSignedUrl(storagePath, 3600);
     } catch (e) {
       throw Exception('Failed to get audio URL: $e');
     }
   }
 
-  // ── Delete audio file from Storage ────────────────────────
   Future<void> deleteAudioFile(String storagePath) async {
     try {
       await _db.storage.from('recordings').remove([storagePath]);
-    } catch (_) {
-      // Silently ignore — file may already be deleted
-    }
+    } catch (_) {}
   }
 }

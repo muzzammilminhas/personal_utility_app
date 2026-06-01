@@ -1,28 +1,3 @@
-// ============================================================
-//  screens/recorder/record_screen.dart  –  Recording UI
-// ============================================================
-//
-//  This screen has TWO phases controlled by _phase enum:
-//
-//  Phase 1: READY (before recording)
-//  └── Large mic button → tapping starts recording
-//
-//  Phase 2: RECORDING (in progress)
-//  └── Animated pulsing mic + live timer
-//  └── Stop button → stops and moves to Phase 3
-//
-//  Phase 3: SAVING (after recording)
-//  └── Form: title + notes fields
-//  └── Save button → uploads to Supabase + saves metadata
-//
-//  Key Flutter concepts demonstrated:
-//  • Timer (dart:async)       → updates the recording clock every second
-//  • AnimationController      → drives the pulsing mic ring animation
-//  • ValueNotifier            → lightweight state for the timer display
-//  • async/await flow         → record → upload → db save → pop
-//
-// ============================================================
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -32,7 +7,6 @@ import '../../providers/recording_provider.dart';
 import '../../services/audio_service.dart';
 import '../../utils/app_constants.dart';
 
-// Enum to represent the three phases of this screen
 enum _RecordPhase { ready, recording, saving }
 
 class RecordScreen extends StatefulWidget {
@@ -44,38 +18,28 @@ class RecordScreen extends StatefulWidget {
 
 class _RecordScreenState extends State<RecordScreen>
     with SingleTickerProviderStateMixin {
-  // ── Services ───────────────────────────────────────────────
   final AudioService _audioService = AudioService();
 
-  // ── Screen phase ──────────────────────────────────────────
   _RecordPhase _phase = _RecordPhase.ready;
 
-  // ── Timer for live duration display ───────────────────────
-  // Timer.periodic fires a callback every N duration
   Timer? _timer;
-  int _elapsedSeconds = 0;  // How many seconds recorded so far
+  int _elapsedSeconds = 0;
 
-  // ── Result from stopRecording() ───────────────────────────
   RecordResult? _recordResult;
 
-  // ── Save form ──────────────────────────────────────────────
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _notesController = TextEditingController();
   bool _isSaving = false;
 
-  // ── Pulse animation for the recording ring ────────────────
-  // AnimationController drives the animation timing
   late final AnimationController _pulseController;
-  // Animation<double> maps the 0→1 controller value to 0.8→1.0 scale
+
   late final Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    // Set up pulse animation: scale oscillates 0.85 ↔ 1.0
-    // duration: 800ms per cycle, repeats indefinitely
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -83,9 +47,9 @@ class _RecordScreenState extends State<RecordScreen>
     _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    // repeat(reverse: true) → ping-pong: 0.85→1.0→0.85→...
+
     _pulseController.repeat(reverse: true);
-    // Start paused — only plays during recording
+
     _pulseController.stop();
   }
 
@@ -98,15 +62,12 @@ class _RecordScreenState extends State<RecordScreen>
     super.dispose();
   }
 
-  // ── Format seconds → "mm:ss" string ───────────────────────
-  // Example: 75 → "1:15"
   String get _formattedTime {
     final m = _elapsedSeconds ~/ 60;
     final s = _elapsedSeconds % 60;
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 
-  // ── Start Recording ────────────────────────────────────────
   Future<void> _startRecording() async {
     try {
       await _audioService.startRecording();
@@ -116,12 +77,10 @@ class _RecordScreenState extends State<RecordScreen>
         _elapsedSeconds = 0;
       });
 
-      // Start the visual timer — fires every 1 second
       _timer = Timer.periodic(const Duration(seconds: 1), (_) {
         setState(() => _elapsedSeconds++);
       });
 
-      // Start the pulse animation
       _pulseController.repeat(reverse: true);
     } catch (e) {
       if (mounted) {
@@ -133,7 +92,6 @@ class _RecordScreenState extends State<RecordScreen>
     }
   }
 
-  // ── Stop Recording ─────────────────────────────────────────
   Future<void> _stopRecording() async {
     _timer?.cancel();
     _pulseController.stop();
@@ -143,7 +101,7 @@ class _RecordScreenState extends State<RecordScreen>
       setState(() {
         _recordResult = result;
         _phase = _RecordPhase.saving;
-        // Pre-fill title with timestamp as default
+
         _titleController.text =
             'Recording ${DateTime.now().toString().substring(0, 16)}';
       });
@@ -158,7 +116,6 @@ class _RecordScreenState extends State<RecordScreen>
     }
   }
 
-  // ── Cancel (discard the recording) ────────────────────────
   Future<void> _cancel() async {
     _timer?.cancel();
     _pulseController.stop();
@@ -170,7 +127,6 @@ class _RecordScreenState extends State<RecordScreen>
     });
   }
 
-  // ── Save recording to Supabase ─────────────────────────────
   Future<void> _saveRecording() async {
     if (!_formKey.currentState!.validate()) return;
     if (_recordResult == null) return;
@@ -178,15 +134,12 @@ class _RecordScreenState extends State<RecordScreen>
     setState(() => _isSaving = true);
 
     try {
-      // Step 1: Upload audio file to Supabase Storage
-      // This returns the storage path (e.g. "{userId}/{uuid}.m4a")
       final storagePath =
           await _audioService.uploadRecording(_recordResult!.localPath);
 
-      // Step 2: Build the Recording model
       final recording = Recording(
-        id: '',               // Server generates
-        userId: '',           // Server fills from auth.uid()
+        id: '',
+        userId: '',
         title: _titleController.text.trim(),
         notes: _notesController.text.trim(),
         filePath: storagePath,
@@ -194,7 +147,6 @@ class _RecordScreenState extends State<RecordScreen>
         createdAt: DateTime.now(),
       );
 
-      // Step 3: Save metadata to the recordings table
       if (!mounted) return;
       final success =
           await context.read<RecordingProvider>().addRecording(recording);
@@ -202,7 +154,7 @@ class _RecordScreenState extends State<RecordScreen>
       if (!mounted) return;
 
       if (success) {
-        Navigator.pop(context); // Return to recording list
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Recording saved!'),
         ));
@@ -221,7 +173,6 @@ class _RecordScreenState extends State<RecordScreen>
     }
   }
 
-  // ── Discard without saving ────────────────────────────────
   Future<void> _discardSave() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -255,7 +206,6 @@ class _RecordScreenState extends State<RecordScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      // Intercept back button during recording to prevent data loss
       canPop: _phase == _RecordPhase.ready,
       onPopInvokedWithResult: (didPop, _) async {
         if (!didPop && _phase == _RecordPhase.recording) {
@@ -272,14 +222,12 @@ class _RecordScreenState extends State<RecordScreen>
           backgroundColor: ModuleColors.recorderLight,
           foregroundColor: ModuleColors.recorder,
         ),
-        body: _phase == _RecordPhase.saving
-            ? _buildSaveForm()
-            : _buildRecordUI(),
+        body:
+            _phase == _RecordPhase.saving ? _buildSaveForm() : _buildRecordUI(),
       ),
     );
   }
 
-  // ── Phase 1 & 2: Record UI ─────────────────────────────────
   Widget _buildRecordUI() {
     final theme = Theme.of(context);
     final isRecording = _phase == _RecordPhase.recording;
@@ -288,22 +236,17 @@ class _RecordScreenState extends State<RecordScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // ── Status label ────────────────────────────────────
           Text(
             isRecording ? '● RECORDING' : 'TAP TO RECORD',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
               letterSpacing: 2,
-              color: isRecording
-                  ? Colors.red
-                  : theme.colorScheme.onSurfaceVariant,
+              color:
+                  isRecording ? Colors.red : theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-
-          // ── Animated mic button ──────────────────────────────
-          // ScaleTransition uses the _pulseAnimation to grow/shrink
           ScaleTransition(
             scale: isRecording
                 ? _pulseAnimation
@@ -315,13 +258,11 @@ class _RecordScreenState extends State<RecordScreen>
                 height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  // Outer glow ring (only during recording)
                   border: isRecording
-                      ? Border.all(color: Colors.red.withValues(alpha: 0.3), width: 12)
+                      ? Border.all(
+                          color: Colors.red.withValues(alpha: 0.3), width: 12)
                       : null,
-                  color: isRecording
-                      ? Colors.red
-                      : ModuleColors.recorder,
+                  color: isRecording ? Colors.red : ModuleColors.recorder,
                   boxShadow: [
                     BoxShadow(
                       color: (isRecording ? Colors.red : ModuleColors.recorder)
@@ -340,8 +281,6 @@ class _RecordScreenState extends State<RecordScreen>
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-
-          // ── Timer display ────────────────────────────────────
           Text(
             _formattedTime,
             style: theme.textTheme.displayMedium?.copyWith(
@@ -351,8 +290,6 @@ class _RecordScreenState extends State<RecordScreen>
             ),
           ),
           const SizedBox(height: AppSpacing.xxl),
-
-          // ── Stop button (only visible during recording) ──────
           if (isRecording)
             Column(
               children: [
@@ -366,38 +303,35 @@ class _RecordScreenState extends State<RecordScreen>
                   ),
                   icon: const Icon(Icons.stop_rounded),
                   label: const Text('Stop Recording',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600)),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextButton(
                   onPressed: _cancel,
                   child: Text('Cancel',
-                      style: TextStyle(
-                          color: theme.colorScheme.onSurfaceVariant)),
+                      style:
+                          TextStyle(color: theme.colorScheme.onSurfaceVariant)),
                 ),
               ],
             ),
-
-          // ── Hint (only on ready screen) ──────────────────────
           if (!isRecording)
             Text(
               'Tap the microphone to begin',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
         ],
       ),
     );
   }
 
-  // ── Phase 3: Save Form ─────────────────────────────────────
   Widget _buildSaveForm() {
     final theme = Theme.of(context);
     final durationStr = _recordResult != null
         ? () {
             final s = _recordResult!.durationMs ~/ 1000;
-            return '${ s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
+            return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
           }()
         : '0:00';
 
@@ -408,7 +342,6 @@ class _RecordScreenState extends State<RecordScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Recorded summary card ──────────────────────────
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
@@ -436,15 +369,14 @@ class _RecordScreenState extends State<RecordScreen>
                               color: ModuleColors.recorder)),
                       Text('Duration: $durationStr',
                           style: theme.textTheme.bodySmall?.copyWith(
-                              color: ModuleColors.recorder.withValues(alpha: 0.7))),
+                              color: ModuleColors.recorder
+                                  .withValues(alpha: 0.7))),
                     ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-
-            // ── Title field ──────────────────────────────────
             TextFormField(
               controller: _titleController,
               textCapitalization: TextCapitalization.sentences,
@@ -458,8 +390,6 @@ class _RecordScreenState extends State<RecordScreen>
                   : null,
             ),
             const SizedBox(height: AppSpacing.md),
-
-            // ── Notes field ──────────────────────────────────
             TextFormField(
               controller: _notesController,
               maxLines: 4,
@@ -475,8 +405,6 @@ class _RecordScreenState extends State<RecordScreen>
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
-
-            // ── Save button ──────────────────────────────────
             _isSaving
                 ? const Center(
                     child: Column(children: [
@@ -497,8 +425,6 @@ class _RecordScreenState extends State<RecordScreen>
                             fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
             const SizedBox(height: AppSpacing.md),
-
-            // ── Discard button ───────────────────────────────
             if (!_isSaving)
               OutlinedButton.icon(
                 onPressed: _discardSave,

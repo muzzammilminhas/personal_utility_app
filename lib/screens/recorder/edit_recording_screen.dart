@@ -1,17 +1,3 @@
-// ============================================================
-//  screens/recorder/edit_recording_screen.dart  –  Edit Metadata
-// ============================================================
-//
-//  Allows the user to update the title and notes of a saved
-//  recording. The audio file itself is NOT changed — only the
-//  metadata stored in the Supabase `recordings` table.
-//
-//  This is a straightforward edit form that mirrors the pattern
-//  used in CardFormScreen (Part 3) with the same Provider → DB
-//  update flow.
-//
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -36,7 +22,7 @@ class _EditRecordingScreenState extends State<EditRecordingScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill with existing values
+
     _titleController = TextEditingController(text: widget.recording.title);
     _notesController = TextEditingController(text: widget.recording.notes);
   }
@@ -51,7 +37,6 @@ class _EditRecordingScreenState extends State<EditRecordingScreen> {
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Build updated Recording using copyWith
     final updated = widget.recording.copyWith(
       title: _titleController.text.trim(),
       notes: _notesController.text.trim(),
@@ -64,8 +49,8 @@ class _EditRecordingScreenState extends State<EditRecordingScreen> {
 
     if (success) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Recording updated!')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Recording updated!')));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
@@ -109,8 +94,6 @@ class _EditRecordingScreenState extends State<EditRecordingScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: AppSpacing.sm),
-
-              // ── Duration info (read-only) ──────────────────
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
@@ -133,8 +116,6 @@ class _EditRecordingScreenState extends State<EditRecordingScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-
-              // ── Title field ──────────────────────────────────
               TextFormField(
                 controller: _titleController,
                 textCapitalization: TextCapitalization.sentences,
@@ -143,12 +124,11 @@ class _EditRecordingScreenState extends State<EditRecordingScreen> {
                   labelText: 'Recording Title *',
                   prefixIcon: Icon(Icons.title_rounded),
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Title is required' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Title is required'
+                    : null,
               ),
               const SizedBox(height: AppSpacing.md),
-
-              // ── Notes field ──────────────────────────────────
               TextFormField(
                 controller: _notesController,
                 maxLines: 5,
@@ -164,8 +144,6 @@ class _EditRecordingScreenState extends State<EditRecordingScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-
-              // ── Save button ──────────────────────────────────
               provider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton.icon(

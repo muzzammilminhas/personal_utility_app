@@ -1,26 +1,5 @@
-// ============================================================
-//  widgets/common_widgets.dart  –  Reusable UI Components
-// ============================================================
-//
-//  Instead of copy-pasting the same widget code in 3 screens,
-//  we build them ONCE here and use them everywhere.
-//  This is called the DRY principle (Don't Repeat Yourself).
-//
-//  Widgets in this file:
-//  • ModuleCard     → Large tappable card for home screen
-//  • EmptyState     → Shown when a list has no items
-//  • LoadingWidget  → Centered CircularProgressIndicator
-//  • ErrorWidget    → Shows error message with retry button
-//  • ConfirmDialog  → Reusable delete confirmation dialog
-//
-// ============================================================
-
 import 'package:flutter/material.dart';
 
-// ── ModuleCard ───────────────────────────────────────────────
-//  Large card shown on the Home screen for each module.
-//  Features an icon, title, description, and item count badge.
-// ─────────────────────────────────────────────────────────────
 class ModuleCard extends StatelessWidget {
   final String title;
   final String description;
@@ -29,7 +8,7 @@ class ModuleCard extends StatelessWidget {
   final Color backgroundColor;
   final int itemCount;
   final String itemLabel;
-  final VoidCallback onTap;  // VoidCallback = a function that takes no args
+  final VoidCallback onTap;
 
   const ModuleCard({
     super.key,
@@ -48,16 +27,13 @@ class ModuleCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      // Card uses theme's cardTheme (set in main.dart)
       child: InkWell(
-        // InkWell adds ripple effect on tap
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Row(
             children: [
-              // ── Icon Container ─────────────────────────────
               Container(
                 width: 60,
                 height: 60,
@@ -68,8 +44,6 @@ class ModuleCard extends StatelessWidget {
                 child: Icon(icon, color: color, size: 28),
               ),
               const SizedBox(width: 16),
-
-              // ── Text Content ───────────────────────────────
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,7 +62,6 @@ class ModuleCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // ── Item count badge ───────────────────────
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -110,8 +83,6 @@ class ModuleCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // ── Arrow indicator ────────────────────────────
               Icon(
                 Icons.chevron_right_rounded,
                 color: theme.colorScheme.onSurfaceVariant,
@@ -124,10 +95,6 @@ class ModuleCard extends StatelessWidget {
   }
 }
 
-// ── EmptyState ───────────────────────────────────────────────
-//  Shown when a list view has zero items.
-//  Guides the user to take action (add their first item).
-// ─────────────────────────────────────────────────────────────
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -154,15 +121,12 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Big icon
             Icon(
               icon,
               size: 80,
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-
-            // Title
             Text(
               title,
               style: theme.textTheme.titleLarge?.copyWith(
@@ -172,8 +136,6 @@ class EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-
-            // Helper text
             Text(
               message,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -181,8 +143,6 @@ class EmptyState extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-
-            // Optional action button
             if (buttonLabel != null && onButtonPressed != null) ...[
               const SizedBox(height: 24),
               FilledButton.icon(
@@ -198,9 +158,6 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-// ── LoadingWidget ────────────────────────────────────────────
-//  Simple centered loading spinner with optional label.
-// ─────────────────────────────────────────────────────────────
 class LoadingWidget extends StatelessWidget {
   final String? label;
 
@@ -228,9 +185,6 @@ class LoadingWidget extends StatelessWidget {
   }
 }
 
-// ── ErrorDisplay ─────────────────────────────────────────────
-//  Shows an error message with a retry button.
-// ─────────────────────────────────────────────────────────────
 class ErrorDisplay extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
@@ -282,13 +236,6 @@ class ErrorDisplay extends StatelessWidget {
   }
 }
 
-// ── showConfirmDialog ─────────────────────────────────────────
-//  Helper function (not a Widget class) that shows an
-//  AlertDialog asking the user to confirm a destructive action.
-//
-//  Returns true if user tapped "Delete", false otherwise.
-//  Usage: final confirmed = await showConfirmDialog(context, ...);
-// ─────────────────────────────────────────────────────────────
 Future<bool> showConfirmDialog(
   BuildContext context, {
   required String title,
@@ -302,12 +249,10 @@ Future<bool> showConfirmDialog(
       title: Text(title),
       content: Text(message),
       actions: [
-        // Cancel button
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
           child: Text(cancelLabel),
         ),
-        // Confirm (destructive) button
         FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.error,
@@ -318,6 +263,6 @@ Future<bool> showConfirmDialog(
       ],
     ),
   );
-  // If dialog was dismissed without tapping (back button), treat as cancel
+
   return result ?? false;
 }

@@ -1,17 +1,3 @@
-// ============================================================
-//  screens/auth/login_screen.dart  –  Sign In Screen
-// ============================================================
-//
-//  This screen allows existing users to sign in.
-//  It has:
-//  • Email & Password text fields
-//  • "Sign In" button that calls AuthProvider.signIn()
-//  • A link to navigate to the Sign Up screen
-//  • Error message display
-//  • Loading indicator while request is in progress
-//
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -31,19 +17,15 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // ── Form key for validation ────────────────────────────────
   final _formKey = GlobalKey<FormState>();
 
-  // ── Text controllers to read field values ──────────────────
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // ── Local UI state ─────────────────────────────────────────
-  bool _obscurePassword = true; // Toggle password visibility
+  bool _obscurePassword = true;
 
   bool get _isAdminLogin => widget.role == AppRole.admin;
 
-  // ── Cleanup: always dispose controllers ────────────────────
   @override
   void dispose() {
     _emailController.dispose();
@@ -51,12 +33,9 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // ── Handle Sign In button press ────────────────────────────
   Future<void> _handleSignIn() async {
-    // First validate the form fields
     if (!_formKey.currentState!.validate()) return;
 
-    // Clear previous error before new attempt
     context.read<AuthProvider>().clearError();
 
     final success = await context.read<AuthProvider>().signIn(
@@ -66,14 +45,11 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
     if (success && mounted) {
-      // AuthWrapper switches the root screen after login. Remove this pushed
-      // login route so the user/admin dashboard is visible immediately.
       Navigator.of(context).popUntil((route) => route.isFirst);
       return;
     }
 
     if (!success && mounted) {
-      // Show a snackbar with the error message
       final error = context.read<AuthProvider>().errorMessage;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -151,15 +127,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                   ],
-                  // ── App Logo / Icon ──────────────────────────
                   Icon(
                     icon,
                     size: 72,
                     color: theme.colorScheme.primary,
                   ),
                   const SizedBox(height: 16),
-
-                  // ── Title ────────────────────────────────────
                   Text(
                     title,
                     textAlign: TextAlign.center,
@@ -169,7 +142,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-
                   Text(
                     subtitle,
                     textAlign: TextAlign.center,
@@ -178,8 +150,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 40),
-
-                  // ── Email Field ──────────────────────────────
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -188,7 +158,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Email',
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
-                    // Validation: check it's not empty & has @ symbol
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Please enter your email';
@@ -196,12 +165,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (!value.contains('@')) {
                         return 'Please enter a valid email';
                       }
-                      return null; // null means valid
+                      return null;
                     },
                   ),
                   const SizedBox(height: 16),
-
-                  // ── Password Field ───────────────────────────
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
@@ -210,7 +177,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: InputDecoration(
                       labelText: 'Password',
                       prefixIcon: const Icon(Icons.lock_outlined),
-                      // Eye icon to toggle password visibility
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
@@ -241,9 +207,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // ── Sign In Button ───────────────────────────
-                  // Show spinner while loading, button otherwise
                   authProvider.isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : ElevatedButton(
@@ -261,8 +224,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                   const SizedBox(height: 24),
-
-                  // ── Navigate to Sign Up ──────────────────────
                   if (!_isAdminLogin)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -273,7 +234,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         TextButton(
                           onPressed: () {
-                            // Push SignUpScreen on top of LoginScreen
                             Navigator.push(
                               context,
                               MaterialPageRoute(

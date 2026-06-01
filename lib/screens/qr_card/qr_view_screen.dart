@@ -1,29 +1,3 @@
-// ============================================================
-//  screens/qr_card/qr_view_screen.dart  –  QR Code Generator
-// ============================================================
-//
-//  This screen takes a BusinessCard and displays its data as
-//  a QR code that other people can scan.
-//
-//  How QR data is formatted:
-//  We build a vCard 3.0 string — the standard contact format
-//  that phones automatically recognise. When scanned, Android
-//  and iOS prompt "Add to Contacts". The format looks like:
-//
-//    BEGIN:VCARD
-//    VERSION:3.0
-//    FN:Ali Khan
-//    ORG:Acme Corp
-//    TITLE:Developer
-//    TEL:+92-300-1234567
-//    EMAIL:ali@example.com
-//    URL:https://alisite.com
-//    END:VCARD
-//
-//  Package used: qr_flutter (renders a QRImage widget)
-//
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -35,20 +9,14 @@ class QRViewScreen extends StatelessWidget {
 
   const QRViewScreen({super.key, required this.card});
 
-  // ── Build vCard 3.0 string from card fields ────────────────
-  // This is the text that gets encoded into the QR code
   String _buildVCardString() {
-    // StringBuffer is efficient for building strings line by line
     final buffer = StringBuffer();
 
     buffer.writeln('BEGIN:VCARD');
     buffer.writeln('VERSION:3.0');
 
-    // FN = Formatted Name (full name)
     buffer.writeln('FN:${card.name}');
 
-    // N = Name components: Last;First;Middle;Prefix;Suffix
-    // Simple split: try to separate first/last name
     final nameParts = card.name.trim().split(' ');
     final lastName = nameParts.length > 1 ? nameParts.last : '';
     final firstName = nameParts.length > 1
@@ -56,7 +24,6 @@ class QRViewScreen extends StatelessWidget {
         : nameParts.first;
     buffer.writeln('N:$lastName;$firstName;;;');
 
-    // Optional fields — only include if not null/empty
     if (card.company != null && card.company!.isNotEmpty) {
       buffer.writeln('ORG:${card.company}');
     }
@@ -93,15 +60,10 @@ class QRViewScreen extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: [
-            // ── Info Card (shows card details above QR) ──────
             _buildInfoCard(theme),
             const SizedBox(height: AppSpacing.lg),
-
-            // ── QR Code Card ──────────────────────────────────
             _buildQRCard(context, qrData),
             const SizedBox(height: AppSpacing.lg),
-
-            // ── Help text ─────────────────────────────────────
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
@@ -130,7 +92,6 @@ class QRViewScreen extends StatelessWidget {
     );
   }
 
-  // ── Info Card: shows all card fields ──────────────────────
   Widget _buildInfoCard(ThemeData theme) {
     return Card(
       child: Padding(
@@ -138,7 +99,6 @@ class QRViewScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header row
             Row(
               children: [
                 Container(
@@ -168,10 +128,8 @@ class QRViewScreen extends StatelessWidget {
                 ),
               ],
             ),
-
             if (_hasAnyContact()) ...[
               const Divider(height: 24),
-              // Contact detail rows
               if (card.company != null && card.company!.isNotEmpty)
                 _infoRow(Icons.business_outlined, card.company!, theme),
               if (card.email != null && card.email!.isNotEmpty)
@@ -212,7 +170,6 @@ class QRViewScreen extends StatelessWidget {
     );
   }
 
-  // ── QR Code Card ─────────────────────────────────────────────
   Widget _buildQRCard(BuildContext context, String qrData) {
     return Card(
       child: Padding(
@@ -226,11 +183,6 @@ class QRViewScreen extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: AppSpacing.md),
-
-            // ── QrImageView from qr_flutter package ───────────
-            // This widget renders the QR code automatically from
-            // any String. errorCorrectionLevel.H means the QR
-            // still works even if up to 30% of it is damaged.
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -243,16 +195,14 @@ class QRViewScreen extends StatelessWidget {
               ),
               child: QrImageView(
                 data: qrData,
-                version: QrVersions.auto, // Automatically pick QR version
+                version: QrVersions.auto,
                 size: 220.0,
                 backgroundColor: Colors.white,
                 errorCorrectionLevel: QrErrorCorrectLevel.H,
-                // Custom embedded image in center of QR (optional)
                 embeddedImage: null,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-
             Text(
               'Point a camera at this code to scan',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(

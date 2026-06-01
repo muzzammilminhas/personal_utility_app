@@ -1,24 +1,3 @@
-// ============================================================
-//  screens/recorder/playback_screen.dart  –  Audio Playback
-// ============================================================
-//
-//  Plays back a saved recording using the `audioplayers` package.
-//
-//  Flow:
-//  1. Screen opens → fetch signed URL from Supabase Storage
-//  2. AudioPlayer.play(UrlSource(url)) → starts streaming
-//  3. onPositionChanged stream → updates the progress slider
-//  4. onDurationChanged stream → sets the total duration label
-//  5. onPlayerStateChanged → updates play/pause button icon
-//  6. Slider.onChanged → user can seek to any position
-//
-//  Key Flutter concepts:
-//  • StreamSubscription   → listening to audioplayers event streams
-//  • Slider widget        → interactive progress bar
-//  • PlayerState enum     → playing / paused / stopped / completed
-//
-// ============================================================
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -38,20 +17,15 @@ class PlaybackScreen extends StatefulWidget {
 }
 
 class _PlaybackScreenState extends State<PlaybackScreen> {
-  // ── AudioPlayer from audioplayers package ─────────────────
   final AudioPlayer _player = AudioPlayer();
   final AudioService _audioService = AudioService();
 
-  // ── State ──────────────────────────────────────────────────
   PlayerState _playerState = PlayerState.stopped;
-  Duration _position = Duration.zero;    // Current playback position
-  Duration _duration = Duration.zero;    // Total audio duration
-  bool _isLoadingUrl = true;             // True while fetching signed URL
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  bool _isLoadingUrl = true;
   String? _errorMessage;
 
-  // ── Stream subscriptions ───────────────────────────────────
-  // We store references so we can cancel them in dispose()
-  // Forgetting to cancel streams = memory leaks!
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration>? _durationSub;
   StreamSubscription<PlayerState>? _stateSub;
@@ -63,31 +37,23 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
   }
 
   Future<void> _setupPlayer() async {
-    // ── Listen to playback position changes ───────────────────
-    // Fires roughly every 200ms while playing
     _positionSub = _player.onPositionChanged.listen((pos) {
       setState(() => _position = pos);
     });
 
-    // ── Listen to total duration (set once the audio loads) ───
     _durationSub = _player.onDurationChanged.listen((dur) {
       setState(() => _duration = dur);
     });
 
-    // ── Listen to player state (playing / paused / completed) ─
     _stateSub = _player.onPlayerStateChanged.listen((state) {
       setState(() => _playerState = state);
     });
 
-    // ── Fetch signed URL from Supabase Storage ─────────────
-    // We need a URL because the file lives in a PRIVATE bucket
     try {
-      final url =
-          await _audioService.getPlaybackUrl(widget.recording.filePath);
+      final url = await _audioService.getPlaybackUrl(widget.recording.filePath);
       if (!mounted) return;
       setState(() => _isLoadingUrl = false);
 
-      // Auto-play when URL is ready
       await _player.play(UrlSource(url));
     } catch (e) {
       if (mounted) {
@@ -101,54 +67,45 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
 
   @override
   void dispose() {
-    // Cancel all stream subscriptions
     _positionSub?.cancel();
     _durationSub?.cancel();
     _stateSub?.cancel();
-    // Release the audio player resource
+
     _player.dispose();
     super.dispose();
   }
 
-  // ── Play / Pause toggle ────────────────────────────────────
   Future<void> _togglePlayPause() async {
     if (_playerState == PlayerState.playing) {
       await _player.pause();
     } else if (_playerState == PlayerState.paused) {
       await _player.resume();
     } else {
-      // Stopped or completed — restart from beginning
-      final url =
-          await _audioService.getPlaybackUrl(widget.recording.filePath);
+      final url = await _audioService.getPlaybackUrl(widget.recording.filePath);
       await _player.play(UrlSource(url));
     }
   }
 
-  // ── Stop playback ──────────────────────────────────────────
   Future<void> _stop() async {
     await _player.stop();
     setState(() => _position = Duration.zero);
   }
 
-  // ── Seek to a position (slider drag) ──────────────────────
   Future<void> _seek(double value) async {
     final position = Duration(milliseconds: value.toInt());
     await _player.seek(position);
   }
 
-  // ── Format Duration for display ───────────────────────────
-  // Duration(seconds: 75) → "1:15"
   String _formatDuration(Duration d) {
     final m = d.inMinutes;
     final s = d.inSeconds % 60;
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 
-  // ── Build slider progress value (0.0 to 1.0) ──────────────
   double get _sliderValue {
     if (_duration.inMilliseconds == 0) return 0.0;
     final value = _position.inMilliseconds / _duration.inMilliseconds;
-    // Clamp to [0.0, 1.0] to prevent slider overflow errors
+
     return value.clamp(0.0, 1.0);
   }
 
@@ -160,8 +117,7 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.recording.title,
-            overflow: TextOverflow.ellipsis),
+        title: Text(widget.recording.title, overflow: TextOverflow.ellipsis),
         backgroundColor: ModuleColors.recorderLight,
         foregroundColor: ModuleColors.recorder,
       ),
@@ -171,18 +127,13 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: AppSpacing.md),
-
-            // ── Recording info card ────────────────────────────
             _buildInfoCard(theme),
             const SizedBox(height: AppSpacing.xl),
-
-            // ── Player UI (loading / error / player) ──────────
             if (_isLoadingUrl)
               const Center(
                 child: Column(
                   children: [
-                    CircularProgressIndicator(
-                        color: ModuleColors.recorder),
+                    CircularProgressIndicator(color: ModuleColors.recorder),
                     SizedBox(height: 12),
                     Text('Loading audio...'),
                   ],
@@ -198,7 +149,6 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
     );
   }
 
-  // ── Recording Info Card ────────────────────────────────────
   Widget _buildInfoCard(ThemeData theme) {
     return Card(
       child: Padding(
@@ -206,7 +156,6 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Waveform icon + title row
             Row(
               children: [
                 Container(
@@ -225,8 +174,8 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
                     children: [
                       Text(
                         widget.recording.title,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold),
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
@@ -240,8 +189,6 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
                 ),
               ],
             ),
-
-            // Notes section
             if (widget.recording.notes.isNotEmpty) ...[
               const Divider(height: 24),
               Row(
@@ -265,21 +212,14 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
     );
   }
 
-  // ── Player Controls ────────────────────────────────────────
-  Widget _buildPlayer(
-      ThemeData theme, bool isPlaying, bool isCompleted) {
+  Widget _buildPlayer(ThemeData theme, bool isPlaying, bool isCompleted) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: [
-            // ── Visual waveform placeholder ──────────────────
-            // A decorative static waveform (real waveform
-            // would require a native plugin — out of scope)
             _buildWaveformVisual(isPlaying),
             const SizedBox(height: AppSpacing.lg),
-
-            // ── Time labels ──────────────────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -300,42 +240,31 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
                 ),
               ],
             ),
-
-            // ── Progress Slider ───────────────────────────────
-            // Slider maps [0, duration_ms] to a draggable handle
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 activeTrackColor: ModuleColors.recorder,
                 inactiveTrackColor:
                     ModuleColors.recorder.withValues(alpha: 0.2),
                 thumbColor: ModuleColors.recorder,
-                overlayColor:
-                    ModuleColors.recorder.withValues(alpha: 0.1),
+                overlayColor: ModuleColors.recorder.withValues(alpha: 0.1),
                 trackHeight: 4,
-                thumbShape:
-                    const RoundSliderThumbShape(enabledThumbRadius: 8),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
               ),
               child: Slider(
-                // Current position as a value between 0 and max
                 value: _position.inMilliseconds
                     .toDouble()
                     .clamp(0.0, _duration.inMilliseconds.toDouble()),
                 min: 0,
                 max: _duration.inMilliseconds > 0
                     ? _duration.inMilliseconds.toDouble()
-                    : 1.0, // Avoid max=0 crash
-                onChanged: _duration.inMilliseconds > 0
-                    ? _seek
-                    : null, // Disabled until duration is known
+                    : 1.0,
+                onChanged: _duration.inMilliseconds > 0 ? _seek : null,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-
-            // ── Playback Control Buttons ──────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // ── Rewind 10s ────────────────────────────────
                 IconButton(
                   iconSize: 36,
                   onPressed: () async {
@@ -348,10 +277,7 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
                   color: theme.colorScheme.onSurfaceVariant,
                   tooltip: 'Rewind 10s',
                 ),
-
                 const SizedBox(width: AppSpacing.lg),
-
-                // ── Play / Pause ──────────────────────────────
                 GestureDetector(
                   onTap: _togglePlayPause,
                   child: Container(
@@ -372,10 +298,7 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(width: AppSpacing.lg),
-
-                // ── Forward 10s ───────────────────────────────
                 IconButton(
                   iconSize: 36,
                   onPressed: () async {
@@ -391,8 +314,6 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
                 ),
               ],
             ),
-
-            // ── Stop button ───────────────────────────────────
             if (isPlaying || _position > Duration.zero) ...[
               const SizedBox(height: AppSpacing.sm),
               TextButton.icon(
@@ -400,8 +321,7 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
                 icon: const Icon(Icons.stop_rounded, size: 18),
                 label: const Text('Stop'),
                 style: TextButton.styleFrom(
-                    foregroundColor:
-                        theme.colorScheme.onSurfaceVariant),
+                    foregroundColor: theme.colorScheme.onSurfaceVariant),
               ),
             ],
           ],
@@ -410,16 +330,40 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
     );
   }
 
-  // ── Decorative waveform bars ───────────────────────────────
-  // A static animated visual to show "audio playing" state.
-  // Uses AnimatedContainer height changes for a simple effect.
   Widget _buildWaveformVisual(bool isPlaying) {
     const barCount = 30;
-    // Pre-defined heights to simulate a waveform shape
+
     const heights = [
-      12, 20, 28, 16, 32, 24, 36, 18, 40, 28,
-      20, 36, 24, 32, 16, 28, 40, 20, 32, 24,
-      36, 18, 28, 40, 24, 16, 32, 20, 28, 14,
+      12,
+      20,
+      28,
+      16,
+      32,
+      24,
+      36,
+      18,
+      40,
+      28,
+      20,
+      36,
+      24,
+      32,
+      16,
+      28,
+      40,
+      20,
+      32,
+      24,
+      36,
+      18,
+      28,
+      40,
+      24,
+      16,
+      32,
+      20,
+      28,
+      14,
     ];
 
     return SizedBox(
@@ -428,9 +372,7 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: List.generate(barCount, (i) {
-          // Bars to the "left" of current position are filled colour
-          final filled =
-              _sliderValue > (i / barCount);
+          final filled = _sliderValue > (i / barCount);
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 1.5),
@@ -451,12 +393,10 @@ class _PlaybackScreenState extends State<PlaybackScreen> {
     );
   }
 
-  // ── Error State ────────────────────────────────────────────
   Widget _buildError(ThemeData theme) {
     return Column(
       children: [
-        Icon(Icons.error_outline,
-            size: 60, color: theme.colorScheme.error),
+        Icon(Icons.error_outline, size: 60, color: theme.colorScheme.error),
         const SizedBox(height: 12),
         Text(_errorMessage ?? 'Playback error',
             textAlign: TextAlign.center,

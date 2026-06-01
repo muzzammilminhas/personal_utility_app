@@ -1,16 +1,3 @@
-// ============================================================
-//  screens/recorder/recording_list_screen.dart
-// ============================================================
-//
-//  Main screen of the Audio Recorder module.
-//  Shows a list of all saved recordings with:
-//  • Duration badge and creation date
-//  • Tap → PlaybackScreen
-//  • Three-dot menu → Edit / Delete
-//  • FAB → RecordScreen (start a new recording)
-//
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -51,8 +38,7 @@ class _RecordingListScreenState extends State<RecordingListScreen> {
   void _openPlayback(Recording recording) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-          builder: (_) => PlaybackScreen(recording: recording)),
+      MaterialPageRoute(builder: (_) => PlaybackScreen(recording: recording)),
     );
   }
 
@@ -79,8 +65,7 @@ class _RecordingListScreenState extends State<RecordingListScreen> {
           content: Text(success
               ? '"${recording.title}" deleted'
               : 'Delete failed. Try again.'),
-          backgroundColor:
-              success ? null : Theme.of(context).colorScheme.error,
+          backgroundColor: success ? null : Theme.of(context).colorScheme.error,
         ));
       }
     }
@@ -144,7 +129,6 @@ class _RecordingListScreenState extends State<RecordingListScreen> {
   }
 }
 
-// ── _RecordingTile ────────────────────────────────────────────
 class _RecordingTile extends StatelessWidget {
   final Recording recording;
   final VoidCallback onTap;
@@ -171,7 +155,6 @@ class _RecordingTile extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
-              // ── Play icon container ──────────────────────────
               Container(
                 width: 52,
                 height: 52,
@@ -183,8 +166,6 @@ class _RecordingTile extends StatelessWidget {
                     color: ModuleColors.recorder, size: 30),
               ),
               const SizedBox(width: AppSpacing.md),
-
-              // ── Info ─────────────────────────────────────────
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,18 +187,15 @@ class _RecordingTile extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        // Duration badge
                         _badge(
                           Icons.timer_outlined,
                           recording.formattedDuration,
                           theme,
                         ),
                         const SizedBox(width: AppSpacing.sm),
-                        // Date badge
                         _badge(
                           Icons.calendar_today_outlined,
-                          DateFormat('MMM d, yyyy')
-                              .format(recording.createdAt),
+                          DateFormat('MMM d, yyyy').format(recording.createdAt),
                           theme,
                         ),
                       ],
@@ -225,8 +203,6 @@ class _RecordingTile extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // ── Three-dot menu ───────────────────────────────
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
                 onSelected: (v) {
@@ -254,10 +230,9 @@ class _RecordingTile extends StatelessWidget {
                   const PopupMenuItem(
                     value: 'delete',
                     child: ListTile(
-                        leading:
-                            Icon(Icons.delete_outline, color: Colors.red),
-                        title: Text('Delete',
-                            style: TextStyle(color: Colors.red)),
+                        leading: Icon(Icons.delete_outline, color: Colors.red),
+                        title:
+                            Text('Delete', style: TextStyle(color: Colors.red)),
                         dense: true,
                         contentPadding: EdgeInsets.zero),
                   ),
@@ -272,8 +247,7 @@ class _RecordingTile extends StatelessWidget {
 
   Widget _badge(IconData icon, String label, ThemeData theme) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: ModuleColors.recorderLight,
         borderRadius: BorderRadius.circular(20),

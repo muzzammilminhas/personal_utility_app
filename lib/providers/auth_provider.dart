@@ -1,20 +1,3 @@
-// ============================================================
-//  providers/auth_provider.dart  –  Authentication State
-// ============================================================
-//
-//  AuthProvider extends ChangeNotifier, which means:
-//  • It holds authentication state (current user, loading flag)
-//  • When state changes, it calls notifyListeners()
-//  • Any widget wrapped in Consumer<AuthProvider> or that calls
-//    context.watch<AuthProvider>() will automatically rebuild
-//
-//  Methods:
-//  • signUp()   → create new account with email + password
-//  • signIn()   → log in existing user
-//  • signOut()  → log out current user
-//
-// ============================================================
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -25,17 +8,13 @@ import '../config/admin_config.dart';
 enum AppRole { user, admin }
 
 class AuthProvider extends ChangeNotifier {
-  // ── Private fields ─────────────────────────────────────────
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // Track loading state (show spinner during async operations)
   bool _isLoading = true;
 
-  // Store any error message to display in the UI
   String? _errorMessage;
   String? _authLinkErrorMessage;
 
-  // Tracks which login panel was used; the final role always comes from DB.
   AppRole? _requestedLoginRole;
   AppRole? _userRole;
   bool _isRoleLoading = false;
@@ -49,12 +28,10 @@ class AuthProvider extends ChangeNotifier {
   String? _roleLoadUserId;
   StreamSubscription<AuthState>? _authSubscription;
 
-  // ── Constructor ────────────────────────────────────────────
   AuthProvider() {
     _init();
   }
 
-  // ── Public getters (read-only access to private fields) ────
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get authLinkErrorMessage => _authLinkErrorMessage;
@@ -65,13 +42,10 @@ class AuthProvider extends ChangeNotifier {
   String get roleSource => _roleSource;
   bool get isPasswordRecovery => _isPasswordRecovery;
 
-  /// Returns true if a user is currently signed in
   bool get isAuthenticated => _supabase.auth.currentSession != null;
 
-  /// Returns the currently logged-in user (null if not logged in)
   User? get currentUser => _supabase.auth.currentUser;
 
-  /// Returns the user's email address
   String? get userEmail => _supabase.auth.currentUser?.email;
 
   bool get isAdminUser => _userRole == AppRole.admin;
@@ -80,16 +54,7 @@ class AuthProvider extends ChangeNotifier {
 
   bool get isAdminConfigured => true;
 
-  // ── Initialization ─────────────────────────────────────────
-  /// Called once when AuthProvider is created.
-  /// Checks if there's an existing session (user was previously logged in).
-  /// Also listens to auth state changes (login / logout events).
   void _init() {
-    // Listen to Supabase auth events
-    // onAuthStateChange fires when:
-    //  • User signs in
-    //  • User signs out
-    //  • Session is refreshed
     _authSubscription = _supabase.auth.onAuthStateChange.listen(
       (data) {
         final hasEventSession = data.session != null;
@@ -120,15 +85,13 @@ class AuthProvider extends ChangeNotifier {
           );
         }
         _isLoading = false;
-        notifyListeners(); // Rebuild widgets that depend on auth state
+        notifyListeners();
       },
       onError: (Object error, StackTrace stackTrace) {
         _handleAuthStateError(error, stackTrace);
       },
     );
 
-    // If no auth event fires in 2 seconds, stop loading anyway
-    // (handles edge case where offline or no session exists)
     Future.delayed(const Duration(seconds: 2), () {
       if (_isLoading) {
         _isLoading = false;
@@ -137,12 +100,6 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
-  // ── Sign Up ────────────────────────────────────────────────
-  /// Creates a new Supabase user account.
-  /// Returns true on success, false on failure.
-  ///
-  /// [email]    → user's email address
-  /// [password] → must be at least 6 characters (Supabase default)
   void _clearRoleState() {
     _roleLoadRequestId++;
     _roleLoadFuture = null;
@@ -312,7 +269,6 @@ class AuthProvider extends ChangeNotifier {
 
       _isLoading = false;
 
-      // If user is null, signup failed silently
       if (response.user == null) {
         _errorMessage = 'Sign up failed. Please try again.';
         notifyListeners();
@@ -322,13 +278,11 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } on AuthException catch (e) {
-      // AuthException gives us a readable message from Supabase
       _isLoading = false;
       _errorMessage = e.message;
       notifyListeners();
       return false;
     } catch (e) {
-      // Catch any other unexpected errors
       _isLoading = false;
       _errorMessage = 'An unexpected error occurred. Check your connection.';
       notifyListeners();
@@ -336,9 +290,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ── Sign In ────────────────────────────────────────────────
-  /// Signs in an existing user with email and password.
-  /// Returns true on success, false on failure.
   Future<bool> signIn({
     required String email,
     required String password,
@@ -511,8 +462,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ── Sign Out ───────────────────────────────────────────────
-  /// Signs out the current user. Clears session from device.
   Future<void> signOut() async {
     _isLoading = true;
     notifyListeners();
@@ -529,8 +478,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ── Clear Error ────────────────────────────────────────────
-  /// Call this to dismiss an error message in the UI
   void clearError() {
     _errorMessage = null;
     _authLinkErrorMessage = null;

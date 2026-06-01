@@ -1,25 +1,3 @@
-// ============================================================
-//  screens/converter/converter_screen.dart  –  Unit Converter
-// ============================================================
-//
-//  The Unit Converter module is entirely self-contained:
-//  • No Supabase calls (no data to store)
-//  • No Provider (no shared state)
-//  • All state is local with StatefulWidget + setState()
-//
-//  UI Layout:
-//  • TabBar at the top → 3 tabs (Length, Temperature, Weight)
-//  • Each tab = one _ConverterTab widget
-//  • _ConverterTab has: input field, from/to dropdowns, result
-//
-//  Key concept: TabController
-//  A TabController syncs a TabBar (the clickable tab labels)
-//  with a TabBarView (the content shown for each tab).
-//  It requires a TickerProvider (SingleTickerProviderStateMixin
-//  if one controller, or TickerProviderStateMixin for multiple).
-//
-// ============================================================
-
 import 'package:flutter/material.dart';
 
 import '../../models/converter_model.dart';
@@ -32,11 +10,6 @@ class ConverterScreen extends StatefulWidget {
   State<ConverterScreen> createState() => _ConverterScreenState();
 }
 
-// ── SingleTickerProviderStateMixin ────────────────────────────
-//  Required by TabController to drive its animation.
-//  "Ticker" = a callback that fires every animation frame.
-//  SingleTicker = this State only manages ONE controller.
-// ─────────────────────────────────────────────────────────────
 class _ConverterScreenState extends State<ConverterScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
@@ -44,7 +17,7 @@ class _ConverterScreenState extends State<ConverterScreen>
   @override
   void initState() {
     super.initState();
-    // length = number of tabs  |  vsync = this (the TickerProvider)
+
     _tabController = TabController(
       length: ConverterModel.categories.length,
       vsync: this,
@@ -53,7 +26,7 @@ class _ConverterScreenState extends State<ConverterScreen>
 
   @override
   void dispose() {
-    _tabController.dispose(); // Always dispose controllers
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -66,7 +39,6 @@ class _ConverterScreenState extends State<ConverterScreen>
         title: const Text('Unit Converter'),
         backgroundColor: ModuleColors.converterLight,
         foregroundColor: ModuleColors.converter,
-        // ── TabBar lives inside the AppBar's bottom slot ──────
         bottom: TabBar(
           controller: _tabController,
           labelColor: ModuleColors.converter,
@@ -76,7 +48,6 @@ class _ConverterScreenState extends State<ConverterScreen>
           tabs: ConverterModel.categories
               .map(
                 (cat) => Tab(
-                  // Each tab shows emoji icon + category name
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -96,10 +67,6 @@ class _ConverterScreenState extends State<ConverterScreen>
               .toList(),
         ),
       ),
-
-      // ── TabBarView ─────────────────────────────────────────
-      //  Renders the correct content for the active tab.
-      //  Must have the same number of children as the TabBar.
       body: TabBarView(
         controller: _tabController,
         children: ConverterModel.categories
@@ -110,21 +77,6 @@ class _ConverterScreenState extends State<ConverterScreen>
   }
 }
 
-// ── _ConverterTab ─────────────────────────────────────────────
-//  One complete converter tab (Length / Temperature / Weight).
-//
-//  State this widget manages:
-//  • _inputValue   → the number the user typed
-//  • _fromUnit     → currently selected "from" unit
-//  • _toUnit       → currently selected "to" unit
-//  • _result       → computed result string
-//  • _inputController → TextEditingController for the input field
-//
-//  Real-time conversion:
-//  The input field's onChanged callback calls _compute() on every
-//  keystroke. setState() triggers a rebuild showing the new result.
-//  No button press needed — instant feedback as you type.
-// ─────────────────────────────────────────────────────────────
 class _ConverterTab extends StatefulWidget {
   final ConversionCategory category;
 
@@ -136,10 +88,6 @@ class _ConverterTab extends StatefulWidget {
 
 class _ConverterTabState extends State<_ConverterTab>
     with AutomaticKeepAliveClientMixin {
-  // ── AutomaticKeepAliveClientMixin ─────────────────────────
-  //  Without this mixin, TabBarView destroys and recreates tabs
-  //  when switching. With wantKeepAlive = true, the state
-  //  (typed value, selected units) is PRESERVED when tab-switching.
   @override
   bool get wantKeepAlive => true;
 
@@ -154,7 +102,6 @@ class _ConverterTabState extends State<_ConverterTab>
     super.initState();
     _inputController = TextEditingController();
 
-    // Default: first unit as "from", second unit as "to"
     _fromUnit = widget.category.units.first;
     _toUnit = widget.category.units.length > 1
         ? widget.category.units[1]
@@ -167,12 +114,9 @@ class _ConverterTabState extends State<_ConverterTab>
     super.dispose();
   }
 
-  // ── Compute result ─────────────────────────────────────────
-  //  Called on every keystroke and whenever units change.
   void _compute() {
     final inputText = _inputController.text.trim();
 
-    // Empty input → clear result
     if (inputText.isEmpty) {
       setState(() {
         _result = '';
@@ -181,7 +125,6 @@ class _ConverterTabState extends State<_ConverterTab>
       return;
     }
 
-    // Try to parse the input as a number
     final inputValue = double.tryParse(inputText);
     if (inputValue == null) {
       setState(() {
@@ -191,7 +134,6 @@ class _ConverterTabState extends State<_ConverterTab>
       return;
     }
 
-    // Same unit selected → result equals input
     if (_fromUnit.symbol == _toUnit.symbol) {
       setState(() {
         _result = ConverterModel.formatResult(inputValue);
@@ -200,7 +142,6 @@ class _ConverterTabState extends State<_ConverterTab>
       return;
     }
 
-    // Perform the two-step conversion
     final converted = ConverterModel.convert(
       value: inputValue,
       from: _fromUnit,
@@ -213,18 +154,16 @@ class _ConverterTabState extends State<_ConverterTab>
     });
   }
 
-  // ── Swap units (the ⇄ button) ──────────────────────────────
   void _swapUnits() {
     setState(() {
       final temp = _fromUnit;
       _fromUnit = _toUnit;
       _toUnit = temp;
     });
-    // Recompute with swapped units
+
     _compute();
   }
 
-  // ── Clear all inputs ───────────────────────────────────────
   void _clear() {
     _inputController.clear();
     setState(() {
@@ -235,7 +174,6 @@ class _ConverterTabState extends State<_ConverterTab>
 
   @override
   Widget build(BuildContext context) {
-    // IMPORTANT: must call super.build for AutomaticKeepAlive to work
     super.build(context);
 
     final theme = Theme.of(context);
@@ -246,24 +184,14 @@ class _ConverterTabState extends State<_ConverterTab>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: AppSpacing.sm),
-
-          // ── Category header ────────────────────────────────
           _buildCategoryHeader(theme),
           const SizedBox(height: AppSpacing.lg),
-
-          // ── Input section ──────────────────────────────────
           _buildInputSection(theme),
           const SizedBox(height: AppSpacing.md),
-
-          // ── Swap button row ────────────────────────────────
           _buildSwapRow(theme),
           const SizedBox(height: AppSpacing.md),
-
-          // ── Result section ─────────────────────────────────
           _buildResultSection(theme),
           const SizedBox(height: AppSpacing.lg),
-
-          // ── Quick reference table ──────────────────────────
           _buildReferenceTable(theme),
           const SizedBox(height: AppSpacing.lg),
         ],
@@ -271,7 +199,6 @@ class _ConverterTabState extends State<_ConverterTab>
     );
   }
 
-  // ── Category Header Widget ────────────────────────────────
   Widget _buildCategoryHeader(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -307,7 +234,6 @@ class _ConverterTabState extends State<_ConverterTab>
     );
   }
 
-  // ── Input Section: text field + from-unit dropdown ────────
   Widget _buildInputSection(ThemeData theme) {
     return Card(
       child: Padding(
@@ -324,8 +250,6 @@ class _ConverterTabState extends State<_ConverterTab>
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-
-            // ── Numeric input field ──────────────────────────
             TextFormField(
               controller: _inputController,
               keyboardType: const TextInputType.numberWithOptions(
@@ -356,7 +280,6 @@ class _ConverterTabState extends State<_ConverterTab>
                   borderSide:
                       const BorderSide(color: ModuleColors.converter, width: 2),
                 ),
-                // Clear button inside the field
                 suffixIcon: _inputController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -364,13 +287,9 @@ class _ConverterTabState extends State<_ConverterTab>
                       )
                     : null,
               ),
-              // ── Real-time conversion ─────────────────────
-              // onChanged fires on EVERY keystroke
               onChanged: (_) => _compute(),
             ),
             const SizedBox(height: AppSpacing.md),
-
-            // ── From-unit dropdown ───────────────────────────
             _buildUnitDropdown(
               label: 'Convert from',
               selected: _fromUnit,
@@ -387,7 +306,6 @@ class _ConverterTabState extends State<_ConverterTab>
     );
   }
 
-  // ── Swap Button Row ────────────────────────────────────────
   Widget _buildSwapRow(ThemeData theme) {
     return Center(
       child: GestureDetector(
@@ -416,7 +334,6 @@ class _ConverterTabState extends State<_ConverterTab>
     );
   }
 
-  // ── Result Section ─────────────────────────────────────────
   Widget _buildResultSection(ThemeData theme) {
     return Card(
       color: _hasError
@@ -438,8 +355,6 @@ class _ConverterTabState extends State<_ConverterTab>
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-
-            // ── Result value display ─────────────────────────
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -460,7 +375,6 @@ class _ConverterTabState extends State<_ConverterTab>
                     ),
                   ),
                 ),
-                // Show the unit symbol next to the result
                 if (_result.isNotEmpty && !_hasError)
                   Text(
                     _toUnit.symbol,
@@ -472,8 +386,6 @@ class _ConverterTabState extends State<_ConverterTab>
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-
-            // ── To-unit dropdown ─────────────────────────────
             _buildUnitDropdown(
               label: 'Convert to',
               selected: _toUnit,
@@ -484,8 +396,6 @@ class _ConverterTabState extends State<_ConverterTab>
                 }
               },
             ),
-
-            // ── Conversion formula line ──────────────────────
             if (_result.isNotEmpty && !_hasError) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
@@ -502,9 +412,6 @@ class _ConverterTabState extends State<_ConverterTab>
     );
   }
 
-  // ── Unit Dropdown ──────────────────────────────────────────
-  //  A reusable DropdownButtonFormField showing all units
-  //  for the current category.
   Widget _buildUnitDropdown({
     required String label,
     required ConversionUnit selected,
@@ -528,13 +435,11 @@ class _ConverterTabState extends State<_ConverterTab>
             horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       ),
       onChanged: onChanged,
-      // DropdownMenuItem list — one per unit in this category
       items: widget.category.units.map((unit) {
         return DropdownMenuItem<ConversionUnit>(
           value: unit,
           child: Row(
             children: [
-              // Symbol badge
               Container(
                 width: 36,
                 height: 24,
@@ -561,9 +466,6 @@ class _ConverterTabState extends State<_ConverterTab>
     );
   }
 
-  // ── Quick Reference Table ──────────────────────────────────
-  //  Shows handy common conversions for the current category.
-  //  Calculated on-the-fly using ConverterModel.convert().
   Widget _buildReferenceTable(ThemeData theme) {
     final refs = _getQuickReferences();
     if (refs.isEmpty) return const SizedBox();
@@ -591,7 +493,6 @@ class _ConverterTabState extends State<_ConverterTab>
             const SizedBox(height: AppSpacing.sm),
             const Divider(),
             const SizedBox(height: AppSpacing.xs),
-            // Build each reference row
             ...refs.map((ref) => _buildRefRow(ref, theme)),
           ],
         ),
@@ -600,7 +501,6 @@ class _ConverterTabState extends State<_ConverterTab>
   }
 
   Widget _buildRefRow(_QuickRef ref, ThemeData theme) {
-    // Compute the reference conversion live
     final fromUnit = widget.category.units.firstWhere(
         (u) => u.symbol == ref.fromSymbol,
         orElse: () => widget.category.units.first);
@@ -616,7 +516,6 @@ class _ConverterTabState extends State<_ConverterTab>
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          // From side
           Text(
             '${ref.value % 1 == 0 ? ref.value.toInt() : ref.value} ${ref.fromSymbol}',
             style: theme.textTheme.bodyMedium
@@ -626,7 +525,6 @@ class _ConverterTabState extends State<_ConverterTab>
           const Icon(Icons.arrow_forward,
               size: 14, color: ModuleColors.converter),
           const Spacer(),
-          // To side
           Text(
             '$resultStr ${ref.toSymbol}',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -639,7 +537,6 @@ class _ConverterTabState extends State<_ConverterTab>
     );
   }
 
-  // ── Quick reference data per category ─────────────────────
   List<_QuickRef> _getQuickReferences() {
     switch (widget.category.name) {
       case 'Length':
@@ -672,9 +569,6 @@ class _ConverterTabState extends State<_ConverterTab>
   }
 }
 
-// ── _QuickRef helper class ────────────────────────────────────
-//  Holds the data for one row in the Quick Reference table.
-// ─────────────────────────────────────────────────────────────
 class _QuickRef {
   final double value;
   final String fromSymbol;

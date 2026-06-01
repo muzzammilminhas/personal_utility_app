@@ -1,22 +1,3 @@
-// ============================================================
-//  screens/home/home_screen.dart  –  Main Dashboard
-// ============================================================
-//
-//  This is the main screen users see after logging in.
-//  It shows:
-//  • A greeting with the user's email
-//  • 3 module cards (QR Card, Converter, Recorder)
-//  • Each card shows live item count from its provider
-//  • Logout button in the AppBar
-//
-//  State:
-//  • Reads AuthProvider          → user email + logout
-//  • Reads BusinessCardProvider  → card count
-//  • Reads RecordingProvider     → recording count
-//  • Unit Converter has no stored data (no provider needed)
-//
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -26,7 +7,6 @@ import '../../providers/recording_provider.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/common_widgets.dart';
 
-// Module screens (placeholders for Parts 3–5; stubs below)
 import '../qr_card/card_list_screen.dart';
 import '../converter/converter_screen.dart';
 import '../recorder/recording_list_screen.dart';
@@ -42,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Load data after the first frame so context is ready
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadAllData());
   }
 
@@ -135,12 +115,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Greeting banner ──────────────────────────────────────────
   Widget _buildGreetingCard(BuildContext context, String username) {
     final theme = Theme.of(context);
     final hour = DateTime.now().hour;
-    final greeting =
-        hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+    final greeting = hour < 12
+        ? 'Good Morning'
+        : hour < 17
+            ? 'Good Afternoon'
+            : 'Good Evening';
 
     return Container(
       width: double.infinity,
@@ -173,7 +155,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── QR Card module ───────────────────────────────────────────
   Widget _buildQRCardModule(BuildContext context) {
     final count = context.watch<BusinessCardProvider>().cards.length;
     return ModuleCard(
@@ -190,7 +171,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Converter module ─────────────────────────────────────────
   Widget _buildConverterModule(BuildContext context) {
     return ModuleCard(
       title: AppStrings.converterModule,
@@ -200,12 +180,11 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: ModuleColors.converterLight,
       itemCount: 3,
       itemLabel: 'categories',
-      onTap: () => Navigator.push(context,
-          MaterialPageRoute(builder: (_) => const ConverterScreen())),
+      onTap: () => Navigator.push(
+          context, MaterialPageRoute(builder: (_) => const ConverterScreen())),
     );
   }
 
-  // ── Recorder module ──────────────────────────────────────────
   Widget _buildRecorderModule(BuildContext context) {
     final count = context.watch<RecordingProvider>().recordings.length;
     return ModuleCard(
@@ -222,7 +201,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Footer ────────────────────────────────────────────────────
   Widget _buildFooter(BuildContext context, String email) {
     final theme = Theme.of(context);
     return Center(
@@ -235,8 +213,8 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: _handleLogout,
             icon: const Icon(Icons.logout, size: 16),
             label: const Text('Sign Out'),
-            style:
-                TextButton.styleFrom(foregroundColor: theme.colorScheme.outline),
+            style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.outline),
           ),
         ],
       ),

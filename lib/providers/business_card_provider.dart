@@ -1,16 +1,3 @@
-// ============================================================
-//  providers/business_card_provider.dart
-// ============================================================
-//
-//  Manages the STATE of the Business Card module:
-//  • Holds the list of cards in memory
-//  • Calls DatabaseService for all CRUD operations
-//  • Notifies UI widgets when data changes
-//
-//  Pattern: Provider calls Service → updates local list → UI rebuilds
-//
-// ============================================================
-
 import 'package:flutter/material.dart';
 
 import '../models/business_card.dart';
@@ -18,22 +5,18 @@ import '../models/scan_history.dart';
 import '../services/database_service.dart';
 
 class BusinessCardProvider extends ChangeNotifier {
-  // ── Dependencies ───────────────────────────────────────────
   final DatabaseService _db = DatabaseService();
 
-  // ── State ──────────────────────────────────────────────────
   List<BusinessCard> _cards = [];
   List<ScanHistory> _scanHistory = [];
   bool _isLoading = false;
   String? _errorMessage;
 
-  // ── Getters (read-only access) ────────────────────────────
   List<BusinessCard> get cards => _cards;
   List<ScanHistory> get scanHistory => _scanHistory;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // ── LOAD: fetch all cards from Supabase ───────────────────
   Future<void> loadCards() async {
     _setLoading(true);
     try {
@@ -46,7 +29,6 @@ class BusinessCardProvider extends ChangeNotifier {
     }
   }
 
-  // ── LOAD: fetch scan history ──────────────────────────────
   Future<void> loadScanHistory() async {
     _setLoading(true);
     try {
@@ -59,12 +41,11 @@ class BusinessCardProvider extends ChangeNotifier {
     }
   }
 
-  // ── CREATE: add a new card ─────────────────────────────────
   Future<bool> addCard(BusinessCard card) async {
     _setLoading(true);
     try {
       final newCard = await _db.createBusinessCard(card);
-      // Add to front of list (newest first)
+
       _cards.insert(0, newCard);
       _errorMessage = null;
       _setLoading(false);
@@ -76,12 +57,11 @@ class BusinessCardProvider extends ChangeNotifier {
     }
   }
 
-  // ── UPDATE: edit an existing card ─────────────────────────
   Future<bool> updateCard(BusinessCard card) async {
     _setLoading(true);
     try {
       final updated = await _db.updateBusinessCard(card);
-      // Replace the old card in the list with the updated one
+
       final index = _cards.indexWhere((c) => c.id == card.id);
       if (index != -1) {
         _cards[index] = updated;
@@ -96,11 +76,10 @@ class BusinessCardProvider extends ChangeNotifier {
     }
   }
 
-  // ── DELETE: remove a card ─────────────────────────────────
   Future<bool> deleteCard(String cardId) async {
     try {
       await _db.deleteBusinessCard(cardId);
-      // Remove from local list immediately (optimistic update)
+
       _cards.removeWhere((c) => c.id == cardId);
       notifyListeners();
       return true;
@@ -111,7 +90,6 @@ class BusinessCardProvider extends ChangeNotifier {
     }
   }
 
-  // ── SAVE SCAN: store a QR scan result ─────────────────────
   Future<void> saveScan(String scannedText) async {
     try {
       final scan = await _db.saveScan(scannedText);
@@ -123,7 +101,6 @@ class BusinessCardProvider extends ChangeNotifier {
     }
   }
 
-  // ── DELETE SCAN: remove one scan entry ────────────────────
   Future<void> deleteScan(String scanId) async {
     try {
       await _db.deleteScan(scanId);
@@ -135,7 +112,6 @@ class BusinessCardProvider extends ChangeNotifier {
     }
   }
 
-  // ── CLEAR HISTORY: wipe all scan entries ──────────────────
   Future<void> clearScanHistory() async {
     try {
       await _db.clearScanHistory();
@@ -147,7 +123,6 @@ class BusinessCardProvider extends ChangeNotifier {
     }
   }
 
-  // ── Private helpers ───────────────────────────────────────
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

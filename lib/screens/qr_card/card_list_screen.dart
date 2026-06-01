@@ -1,21 +1,3 @@
-// ============================================================
-//  screens/qr_card/card_list_screen.dart  –  Business Card List
-// ============================================================
-//
-//  This is the main screen of the QR Business Card module.
-//  It shows:
-//  • A list of all the user's business card profiles
-//  • FAB (Floating Action Button) to add a new card
-//  • Tap a card → navigate to QR View screen
-//  • Three-dot menu per card → edit / delete options
-//  • AppBar action → navigate to Scan History screen
-//
-//  Data flow:
-//    initState → provider.loadCards() → Supabase fetch
-//    → _cards list updates → notifyListeners() → ListView rebuilds
-//
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -85,8 +67,7 @@ class _CardListScreenState extends State<CardListScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content:
               Text(success ? '${card.name} deleted' : 'Failed to delete card'),
-          backgroundColor:
-              success ? null : Theme.of(context).colorScheme.error,
+          backgroundColor: success ? null : Theme.of(context).colorScheme.error,
         ));
       }
     }
@@ -157,11 +138,6 @@ class _CardListScreenState extends State<CardListScreen> {
   }
 }
 
-// ── _CardListTile ─────────────────────────────────────────────
-//  A private widget for each card row.
-//  Making it a separate StatelessWidget (not just a helper method)
-//  lets Flutter rebuild individual tiles independently — better perf.
-// ─────────────────────────────────────────────────────────────
 class _CardListTile extends StatelessWidget {
   final BusinessCard card;
   final VoidCallback onTap;
@@ -175,7 +151,6 @@ class _CardListTile extends StatelessWidget {
     required this.onDelete,
   });
 
-  // Build initials from name: "Ali Khan" → "AK", "Ali" → "A"
   String get _initials {
     final parts = card.name.trim().split(' ');
     if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
@@ -194,7 +169,6 @@ class _CardListTile extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
-              // ── Initials avatar ────────────────────────────
               Container(
                 width: 52,
                 height: 52,
@@ -214,8 +188,6 @@ class _CardListTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
-
-              // ── Card info ──────────────────────────────────
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,8 +221,6 @@ class _CardListTile extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // ── Three-dot action menu ──────────────────────
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
                 onSelected: (value) {

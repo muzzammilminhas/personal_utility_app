@@ -1,14 +1,3 @@
-// ============================================================
-//  screens/auth/signup_screen.dart  –  Registration Screen
-// ============================================================
-//
-//  This screen allows new users to create an account.
-//  Fields: Email, Password, Confirm Password
-//  On success: pops back to LoginScreen (user must then sign in)
-//  OR if Supabase auto-confirms: AuthWrapper navigates to Home
-//
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,13 +11,11 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  // ── Form & Controllers ─────────────────────────────────────
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  // ── UI State ───────────────────────────────────────────────
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -40,7 +27,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  // ── Handle Sign Up ─────────────────────────────────────────
   Future<void> _handleSignUp() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -54,7 +40,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!mounted) return;
 
     if (success) {
-      // Show success message and go back to login
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -63,9 +48,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           duration: Duration(seconds: 4),
         ),
       );
-      Navigator.pop(context); // Go back to LoginScreen
+      Navigator.pop(context);
     } else {
-      // Show error from AuthProvider
       final error = context.read<AuthProvider>().errorMessage;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -85,7 +69,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       appBar: AppBar(
         title: const Text('Create Account'),
         centerTitle: true,
-        // Back button is automatically added since we pushed this screen
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -96,15 +79,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 16),
-
-                // ── Header Icon ──────────────────────────────
                 Icon(
                   Icons.person_add_outlined,
                   size: 64,
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(height: 16),
-
                 Text(
                   'Join Personal Utility',
                   textAlign: TextAlign.center,
@@ -113,7 +93,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-
                 Text(
                   'Create an account to get started',
                   textAlign: TextAlign.center,
@@ -122,8 +101,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // ── Email ────────────────────────────────────
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -136,7 +113,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     if (value == null || value.trim().isEmpty) {
                       return 'Email is required';
                     }
-                    // Simple email regex check
+
                     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
                     if (!emailRegex.hasMatch(value.trim())) {
                       return 'Enter a valid email address';
@@ -145,8 +122,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // ── Password ─────────────────────────────────
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -177,8 +152,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // ── Confirm Password ─────────────────────────
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
@@ -203,7 +176,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please confirm your password';
                     }
-                    // Cross-field validation: must match password
+
                     if (value != _passwordController.text) {
                       return 'Passwords do not match';
                     }
@@ -211,8 +184,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   },
                 ),
                 const SizedBox(height: 28),
-
-                // ── Sign Up Button ───────────────────────────
                 authProvider.isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
@@ -230,8 +201,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                       ),
                 const SizedBox(height: 24),
-
-                // ── Back to Login ────────────────────────────
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

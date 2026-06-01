@@ -1,4 +1,4 @@
-package com.example.personal_utility_app
+package com.muzammil.personalutilityapp
 
 import io.flutter.embedding.android.FlutterActivity
 
